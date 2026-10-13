@@ -428,9 +428,6 @@ The resource policy defines:
 
 Manifests reference the policy using policy identifiers.
 
-~~~~
-
-~~~~
 # Security Considerations
 
    This section details the security mechanisms, static analysis controls,
