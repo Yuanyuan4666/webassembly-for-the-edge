@@ -1,0 +1,616 @@
+
+
+
+
+Operations and Management Area Working Group                    Z. Cheng
+Internet-Draft                                                    J. Sun
+Intended status: Informational                             China Telecom
+Expires: 16 April 2027                                   13 October 2026
+
+
+      Intent-Driven WebAssembly Framework for Secure Management in
+                      Heterogeneous Edge Networks
+         draft-chen-opsawg-intent-webassembly-framework-latest
+
+Abstract
+
+   This document specifies a standardized, lightweight, sandboxed
+   execution framework based on WebAssembly (WASM) for managed network
+   environments and constrained edge devices.  It defines operational
+   mechanisms for dynamic bytecode dispatching, the Universal Bytecode
+   Interface (UBI) for abstracting heterogeneous network element
+   capabilities, and metadata models for capability exposure, bytecode
+   deployment, execution context, intent-driven discovery, and security
+   audits.  This framework provides a systematic approach to decouple
+   network management and operational scripts from specific hardware
+   platforms, enabling secure, deterministic, and low-latency execution
+   of management tasks.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://billwuqin.github.io/webassembly-for-the-edge/draft-chen-
+   opsawg-intent-webassembly-framework.html.  Status information for
+   this document may be found at https://datatracker.ietf.org/doc/draft-
+   chen-opsawg-intent-webassembly-framework/.
+
+   Discussion of this document takes place on the Operations and
+   Management Area Working Group Working Group mailing list
+   (mailto:opsawg@ietf.org), which is archived at
+   https://mailarchive.ietf.org/arch/browse/opsawg/.  Subscribe at
+   https://www.ietf.org/mailman/listinfo/opsawg/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/billwuqin/webassembly-for-the-edge.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 16 April 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+     1.1.  Background and Problem statement
+     1.2.  Deterministic Execution in Managed Edge Networks
+     1.3.  Use Cases
+   2.  Conventions and Definitions
+   3.  Architectural Framework Overview
+   4.  Core Operational Mechanisms
+     4.1.  Dynamic Resource and Capability Discovery Mechanism
+     4.2.  Bytecode Dispatching Lifecycle
+     4.3.  WASM Bytecode Semantic Properties and Core Capabilities
+     4.4.  Universal Bytecode Interface (UBI) Specifications
+     4.5.  Telemetry and Sensing Domain
+     4.6.  Actuation and Control Domain
+     4.7.  Media Processing Domain
+   5.  Metadata Definitions and Schemas
+     5.1.  Platform Capability Manifest
+     5.2.  Data Collection Manifest
+     5.3.  SUIT Manifest and Bytecode Distribution Envelope
+     5.4.  UBI Resource Constraint Policy
+   6.  Security Considerations
+     6.1.  Static Symbol Audit Matrix and Link-Time Verification
+     6.2.  Sandbox Boundary Enforcement
+   7.  Operational Considerations
+   8.  Security Considerations
+   9.  IANA Considerations
+   10. References
+     10.1.  Normative References
+     10.2.  Informative References
+   Acknowledgments
+   Authors' Addresses
+
+1.  Introduction
+
+1.1.  Background and Problem statement
+
+   As automated network management and intent-based networking (IBN)
+   evolve, network operators increasingly rely on dynamic, closed-loop
+   control mechanisms.  Frameworks utilizing structured tool interfaces
+   (such as Model Context Protocol paradigms) are emerging to expose
+   network node capabilities for automated orchestration.  Against this
+   backdrop, the application of AI-generated code in network operations
+   is becoming increasingly widespread, and automatically generating
+   execution logic that meets management requirements via large language
+   models has become an important means to enhance operational
+   efficiency.  However, executing dynamic operational scripts or
+   telemetry- collection logic directly on heterogeneous and constrained
+   network elements (e.g., edge gateways, IoT routers, MCU-based
+   switches) poses severe security risks and resource challenges.
+
+   Traditional management virtualization technologies like Linux
+   Containers (Docker) introduce excessive boot latencies and high
+   memory footprints, making them unsuitable for constrained nodes or
+   microsecond-level telecommunication response loops.
+
+1.2.  Deterministic Execution in Managed Edge Networks
+
+   In modern distributed network architectures, edge nodes are no longer
+   simple packet-forwarding entities but have evolved into compute-
+   integrated network elements.  When network management systems
+   orchestrate dynamic traffic engineering, local fault remediation, or
+   real-time telemetry, they require on-demand execution of management
+   scripts at the closest data-plane edge.
+
+   However, managed networks enforce strict SLAs concerning jitter,
+   packet loss, and power budgets.  Traditional monolithic containers
+   fail to meet these operational constraints.  WASM sandboxing bridges
+   this gap by decoupling management logic from the underlying hardware
+   Board Support Package (BSP), transforming network-layer compute into
+   an ephemeral, managed pipeline.
+
+1.3.  Use Cases
+
+   Looking ahead, the integration of WebAssembly-based sandboxing,
+   Universal Bytecode Interfaces, and AI-driven orchestration is
+   expected to redefine the operational boundaries of autonomous
+   networks.  As 6G architectures, deterministic edge computing, and
+   large-scale high-density network deployments mature, network
+   management will shift from reactive scripting to proactive, intent-
+   driven closed-loop automation.
+
+   Specifically, future application scenarios will likely encompass:
+
+   a) Autonomous Edge Healing: AI agents dynamically generating,
+   auditing, and pushing localized remediation bytecode to edge nodes
+   within milliseconds of network anomaly detection, bypassing human
+   intervention loops.  b) Cross-Vendor Network Function Virtualization:
+   Universal execution of proprietary traffic engineering and monitoring
+   tasks across heterogeneous equipment vendors without requiring
+   specialized board support packages (BSPs) or proprietary firmware.
+   c) Distributed Telemetry and Deterministic Control: Distributing
+   lightweight computation pipelines across resource-constrained
+   forwarding nodes and access gateways to optimize real-time telemetry
+   processing and closed-loop control at the data-plane periphery.
+
+2.  Conventions and Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   *  WASM Sandbox: A lightweight, isolated virtual machine environment
+      running inside a host process, executing WebAssembly bytecode with
+      linear memory isolation.
+
+   *  UBI (Universal Bytecode Interface): An abstraction layer that
+      exposes standardized host functions to WASM modules.  UBI
+      interfaces describe available device capabilities and hide
+      hardware-specific implementations.
+
+   *  Node Profile: A structured metadata model used by the framework to
+      advertise a network element's supported UBI interfaces, execution
+      capabilities, and runtime information.
+
+   *  UBI-DP (Universal Bytecode Distribution Protocol): The
+      encapsulation and messaging mechanism used to dispatch compiled
+      WASM bytecode binaries along with metadata across network
+      management channels.
+
+   *  WIT (Wasm Interface Type): A WebAssembly standard IDL format used
+      to define types and functions crossing the sandbox boundary.
+
+3.  Architectural Framework Overview
+
+   The proposed framework consists of three operational planes aligned
+   with standard network management architectures:
+
+          +--------------------------------------------------------+
+          |        Intent & Orchestration Plane (Management)       |
+          | [Intent Parsing] -> [Workflow Compile] -> [Cap. Match] |
+          +--------------------------------------------------------+
+                                       |
+                                       v (UBI-DP Dispatching)
+          +--------------------------------------------------------+
+          |        Coordination & Policy Plane (Control Layer)     |
+          | [Static Audit Matrix] -> [CaaS Pool] -> [SHA256 Sign]  |
+          +--------------------------------------------------------+
+                                       |
+                                       v
+          +--------------------------------------------------------+
+          |        Embodied Execution Plane (Device Layer)         |
+          | [Warm Process Pool] -> [WASM Sandbox] -> [UBI Drivers] |
+          +--------------------------------------------------------+
+
+                      Figure 1: Intent based Framework
+
+   1.  Intent & Orchestration Plane: Translates network operator intents
+       into structured workflow models and maps required management
+       tools.
+
+   2.  Coordination & Policy Plane: Acts as the central management
+       controller.  It evaluates requested tasks against security
+       policies, performs deterministic compilation via Compilation-as-
+       a-Service (CaaS), and generates signed bytecode distribution
+       packages.
+
+   3.  Embodied Execution Plane: The physical edge node running embedded
+       WASM runtimes.  It manages a warm process pool to guarantee low
+       sandbox setup latency (<10ms) and restricts hardware access via
+       UBI symbols.
+
+4.  Core Operational Mechanisms
+
+4.1.  Dynamic Resource and Capability Discovery Mechanism
+
+   To establish reliable task routing, the management framework relies
+   on an automated Discovery Mechanism to map requirements to
+   heterogeneous resources:
+
+   1.  Capability Advertisement: Upon network attachment or status
+       update, the Edge Node registers its capability information using
+       a Node Profile.  The profile describes platform information,
+       supported UBI interfaces, and available execution capabilities.
+       For highly constrained nodes, this registration SHOULD use CoAP
+       [RFC7252].  For standard elements, it MAY use gRPC or HTTP/3
+       [RFC9114] over TLS.
+
+   2.  Semantic Feature Graph: The Central Management Controller parses
+       incoming profiles into an active Resource Capability Graph
+       cataloged by sensing domains and computational budgets.
+
+   3.  Intent-Driven Matching Filter: When an operator emits a
+       management workflow, the controller queries the feature graph to
+       match valid target nodes supporting the required UBI primitives.
+
+4.2.  Bytecode Dispatching Lifecycle
+
+   Bytecode distribution MUST be atomic, secure, and self-contained.
+   The network controller utilizes the UBI-DP format to encapsulate the
+   binary and its metadata payload through the following lifecycle:
+
+   Step 1: Discovery.  Edge Node registers its profile, declaring local
+   UBI primitives.  Step 2: Audit.  Controller matches permissions via
+   the Static Symbol Audit Matrix.  Step 3: Transport.  Controller
+   compiles code, computes SHA-256 fingerprints, signs payloads, and
+   transmits via HTTP Semantics [RFC9110] or CoAP [RFC7252].  Step 4:
+   Execution.  Edge Node validates signatures, provisions execution
+   threads, isolates environments, and executes the authorized module.
+
+4.3.  WASM Bytecode Semantic Properties and Core Capabilities
+
+   WASM bytecode dispatched via UBI-DP MUST conform to strict structural
+   and behavioral boundaries:
+
+   a) Single-Threaded Non-Blocking Loop: To prevent thread starvation on
+   low-power nodes, bytecode SHALL NOT spawn guest-level OS threads.  b)
+   Virtual Memory Page Restriction: Memory configuration uses fixed
+   WebAssembly Memory Pages (1 page = 64 KB), statically locked at
+   compilation.  c) AOT Compliant Structure: Modules MUST allow
+   instantaneous translation into native machine instructions via AOT
+   engines, bypassing JIT overhead.
+
+4.4.  Universal Bytecode Interface (UBI) Specifications
+
+4.5.  Telemetry and Sensing Domain
+
+      interface telemetry {
+          record metric-data {
+              metric-name: string,
+              timestamp: u64,
+              payload: list<u8>
+          }
+          read-metric: func(name: string) -> result<metric-data, string>
+      }
+
+4.6.  Actuation and Control Domain
+
+   interface actuation {
+       enum pin-value { low, high }
+       gpio-write: func(pin: u32, value: pin-value) -> result<_, string>
+       i2c-transfer: func(
+           bus-id: u32,
+           addr: u32,
+           tx-data: list<u8>,
+           rx-len: u32
+       ) -> result<list<u8>, string>
+   }
+
+4.7.  Media Processing Domain
+
+   interface media {
+       enum resolution-mode {
+           res-640x480,
+           res-1280x720,
+           res-1920x1080
+       }
+       audio-start: func(mode: u32, sample-rate: u32) -> result<_, string>
+       camera-capture: func(res: resolution-mode) -> result<list<u8>, string>
+   }
+
+5.  Metadata Definitions and Schemas
+
+   The framework uses three types of manifests for different lifecycle
+   stages:
+
+   1.  Platform Manifest: describes device capabilities and execution
+       environment.
+
+   2.  Data Collection Manifest: describes data subscriptions and
+       runtime collection context.
+
+   3.  SUIT Manifest: describes secure software delivery and execution
+       parameters for WASM components.
+
+   These manifests address different lifecycle stages and avoid
+   duplicating information.
+
+5.1.  Platform Capability Manifest
+
+   The Platform Manifest describes the capabilities and execution
+   environment of an edge node.
+
+   It can reuse the platform information model defined in draft-ietf-
+   opsawg-collected-data-manifest.
+
+   The WASM/UBI extension may include:
+
+   *  WASM runtime information;
+
+   *  supported UBI interfaces;
+
+   *  available host functions;
+
+   *  security capabilities.
+
+   {
+     "ubi-wasm-extension:server-metadata": {
+       "runtime-version": "wasm-runtime-v1",
+       "supported-ubi-interfaces": [
+         "telemetry.read-metric",
+         "actuation.gpio-write"
+       ]
+     },
+     "ubi-wasm-extension:governance-and-security": {
+       "authentication-supported": [
+         "mTLS_v1.3"
+       ],
+       "capability-tokens-defined": [
+         "telemetry_read",
+         "net_outbound"
+       ]
+     }
+   }
+
+5.2.  Data Collection Manifest
+
+   The Data Collection Manifest describes data collection subscriptions
+   and runtime collection context.
+
+   It reuses the data collection model defined in draft-ietf-opsawg-
+   collected-data-manifest.
+
+   The manifest may reference external resource policies using policy
+   identifiers.
+
+   {
+    "data-collection": {
+       "platform-id": "edge-node-hetero-01",
+       "subscription-id": 1001,
+       "current-period": 300,
+       "policy-id": "tier_heavy_compute",
+       "runtime-status": {
+          "cpu-percent": 87.5,
+          "action-triggered": "forced-downsampling"
+       }
+    }
+   }
+
+5.3.  SUIT Manifest and Bytecode Distribution Envelope
+
+   To securely deliver WebAssembly (WASM) bytecode components to
+   constrained edge nodes, the distribution framework adopts the
+   Software Updates for Internet of Things (SUIT) manifest architecture.
+   The management controller encapsulates the compiled WASM binary and
+   its execution policy within a CBOR-based SUIT Manifest, protected via
+   CBOR Object Signing and Encryption (COSE) [RFC9052].
+
+   The SUIT manifest enforces the strict sequential workflow required
+   for trusted edge execution:
+
+   1.  Manifest Authentication: The recipient edge node validates the
+       COSE signature of the SUIT manifest using pre-configured trust
+       anchors.
+
+   2.  Applicability Verification: The device checks whether the
+       manifest's target hardware identifiers, vendor IDs, and class IDs
+       match its local hardware profile.
+
+   3.  Dependency Resolution: The node verifies and resolves any
+       required UBI interface dependencies declared in the manifest.
+
+   4.  Payload Fetching: The standalone core .wasm binary payload is
+       retrieved via secure transport (e.g., CoAP block-wise transfer
+       [RFC7252]).
+
+   5.  Installation & Sandbox Initialization: The verified WASM module
+       is loaded into the isolated runtime environment with static
+       memory page constraints and authorized UBI host symbols.
+
+   The following example illustrates possible WASM-specific execution
+   parameters associated with a SUIT Manifest.  Existing SUIT
+   mechanisms, including manifest authentication, component
+   identification, applicability conditions, and payload retrieval,
+   follow the SUIT specification.
+
+   The runtime-parameters field represents a framework-specific
+   extension for constraining WASM execution.  The definition of these
+   parameters in a SUIT Manifest requires corresponding SUIT extension
+   definitions.
+
+{
+  "suit-manifest-version": 1,
+  "suit-sequence-number": 42,
+  "suit-common": {
+    "suit-components": [
+      "wasm-telemetry-module"
+    ]
+  },
+  "suit-install": [
+    {
+      "suit-condition-vendor-id": "example-vendor-id",
+      "suit-condition-class-id": "example-edge-class-id"
+    },
+    {
+      "suit-directive-fetch": {
+        "uri": "coap://management-server.local/wasm/module.wasm",
+        "digest": {
+          "algorithm": "SHA-256",
+          "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "suit-execute": [
+    {
+      "runtime-parameters": {
+        "allowed-memory-pages-max": 256,
+        "execution-timeout-ms": 10000,
+        "allowed-host-functions": [
+          "telemetry.read-metric",
+          "actuation.gpio-write"
+        ]
+      }
+    }
+  ]
+}
+
+5.4.  UBI Resource Constraint Policy
+
+   Resource constraints are modeled separately from manifests.
+
+   Platform Manifest describes available capabilities.  Data Collection
+   Manifest references runtime policies.  SUIT Manifest describes
+   execution constraints.
+
+   The resource policy defines: - concurrency limits; - rate limits; -
+   sandbox quotas; - resource isolation rules.
+
+   Manifests reference the policy using policy identifiers.
+
+6.  Security Considerations
+
+   This section details the security mechanisms, static analysis
+   controls, and boundary enforcement strategies required to ensure safe
+   bytecode execution within managed network environments.
+
+6.1.  Static Symbol Audit Matrix and Link-Time Verification
+
+   To prevent malicious or corrupted management code from executing
+   unauthorized operations, the Management Controller MUST execute a
+   mandatory Ahead-of-Time Static Symbol Audit before bytecode
+   encapsulation.
+
+   The audit pipeline enforces the following validation steps for self-
+   contained core modules:
+
+   1.  Import Table Extraction: The audit engine parses the WASM binary
+       structure, filtering all tokens located within the "Import
+       Section".  This maps every external host function identifier
+       requested by the bytecode.
+
+   2.  Capability-Matrix Intersection: The extracted import symbols are
+       cross-checked against the specific allowed_host_symbols array
+       declared in the Node Profile or execution policy.
+
+   3.  Link-Time Rejection: The binary is scanned to ensure no raw
+       hardware address references bypass the UBI layer.  Any mismatch
+       or inclusion of unauthorized tokens SHALL result in an immediate
+       Link-Time rejection, aborting the transmission and the
+       transmission is rejected.
+
+6.2.  Sandbox Boundary Enforcement
+
+   The execution of dynamically provisioned bytecode on remote physical
+   devices mandates severe security practices.  This framework achieves
+   endogenous security via layers of defensive validation:
+
+   1.  Linear Memory Boundary Isolation: Embedded runtimes MUST leverage
+       virtual memory page capping to ensure that buffer overflows
+       inside the sandboxed application cannot compromise host address
+       spaces.
+
+   2.  File System Namespacing: Runtimes MUST map the sandbox internal
+       root '/' directory to an ephemeral host path using chroot
+       primitives to avoid directory traversal vectors.
+
+7.  Operational Considerations
+
+   TBC per [I-D.opsarea-rfc5706bis].
+
+8.  Security Considerations
+
+   TODO Security
+
+9.  IANA Considerations
+
+   This document requests IANA to create a registry for Universal
+   Bytecode Interface (UBI) Functional Symbols under the Operations and
+   Management Area.
+
+10.  References
+
+10.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+10.2.  Informative References
+
+   [I-D.opsarea-rfc5706bis]
+              Claise, B., Clarke, J., Farrel, A., Barguil, S.,
+              Pignataro, C., and R. Chen, "Guidelines for Considering
+              Operations and Management in IETF Specifications", Work in
+              Progress, Internet-Draft, draft-opsarea-rfc5706bis-06, 20
+              October 2025, <https://datatracker.ietf.org/doc/html/
+              draft-opsarea-rfc5706bis-06>.
+
+   [RFC7252]  Shelby, Z., Hartke, K., and C. Bormann, "The Constrained
+              Application Protocol (CoAP)", RFC 7252,
+              DOI 10.17487/RFC7252, June 2014,
+              <https://www.rfc-editor.org/rfc/rfc7252>.
+
+   [RFC9052]  Schaad, J., "CBOR Object Signing and Encryption (COSE):
+              Structures and Process", STD 96, RFC 9052,
+              DOI 10.17487/RFC9052, August 2022,
+              <https://www.rfc-editor.org/rfc/rfc9052>.
+
+   [RFC9110]  Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
+              Ed., "HTTP Semantics", STD 97, RFC 9110,
+              DOI 10.17487/RFC9110, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9110>.
+
+   [RFC9114]  Bishop, M., Ed., "HTTP/3", RFC 9114, DOI 10.17487/RFC9114,
+              June 2022, <https://www.rfc-editor.org/rfc/rfc9114>.
+
+Acknowledgments
+
+   TODO acknowledge.
+
+Authors' Addresses
+
+   Zonghua Cheng
+   China Telecom
+   Email: bill.wu@huawei.com
+
+
+   Jianping Sun
+   China Telecom
+   Email: bill.wu@huawei.com
