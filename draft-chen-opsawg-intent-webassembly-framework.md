@@ -369,44 +369,47 @@ The manifest may reference external resource policies using policy identifiers.
       loaded into the isolated runtime environment with static memory
       page constraints and authorized UBI host symbols.
 
-   The following example illustrates possible WASM-specific execution parameters carried by a SUIT Manifest. Existing SUIT fields such as manifest version, component identification, authentication, and payload retrieval follow the SUIT specification.
+   The following example illustrates possible WASM-specific execution parameters associated with a SUIT Manifest. Existing SUIT mechanisms, including manifest authentication, component identification, applicability conditions, and payload retrieval, follow the SUIT specification.
+
+The runtime-parameters field represents a framework-specific extension for constraining WASM execution. The definition of these parameters in a SUIT Manifest requires corresponding SUIT extension definitions.
 
 ~~~~
-   {
-     "suit-manifest-version": 1,
-     "suit-sequence-number": 42,
-     "suit-common": {
-       "suit-components": [ "wasm-telemetry-module" ]
-     },
-     "suit-install": [
-       {
-         "suit-condition-vendor-id": "example-vendor-id",
-         "suit-condition-class-id": "example-edge-class-id"
-       },
-       {
-         "suit-directive-fetch": {
-           "uri": "coap://management-server.local/wasm/module.wasm",
-           "digest": {
-             "algorithm": "SHA-256",
-             "value":
-             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-           }
-         }
-       }
-     ],
-     "suit-execute": [
-       {
-         "runtime-parameters": {
-           "allowed_memory_pages_max": 256,
-           "execution_timeout_ms": 10000,
-           "allowed_host_symbols": [
-             "telemetry.read-metric",
-             "actuation.gpio-write"
-           ]
-         }
-       }
-     ]
-   }
+{
+  "suit-manifest-version": 1,
+  "suit-sequence-number": 42,
+  "suit-common": {
+    "suit-components": [
+      "wasm-telemetry-module"
+    ]
+  },
+  "suit-install": [
+    {
+      "suit-condition-vendor-id": "example-vendor-id",
+      "suit-condition-class-id": "example-edge-class-id"
+    },
+    {
+      "suit-directive-fetch": {
+        "uri": "coap://management-server.local/wasm/module.wasm",
+        "digest": {
+          "algorithm": "SHA-256",
+          "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "suit-execute": [
+    {
+      "runtime-parameters": {
+        "allowed-memory-pages-max": 256,
+        "execution-timeout-ms": 10000,
+        "allowed-host-functions": [
+          "telemetry.read-metric",
+          "actuation.gpio-write"
+        ]
+      }
+    }
+  ]
+}
 ~~~~
 
 ## UBI Resource Constraint Policy
