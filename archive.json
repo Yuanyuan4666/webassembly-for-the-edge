@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-10-11T03:20:00.882525+00:00",
+  "timestamp": "2026-10-13T04:55:56.929059+00:00",
   "repo": "Yuanyuan4666/webassembly-for-the-edge",
   "labels": [
     {
@@ -55,5 +55,32 @@
     }
   ],
   "issues": [],
-  "pulls": []
+  "pulls": [
+    {
+      "number": 1,
+      "id": "PR_kwDOUi_W8M8AAAABIFp5zQ",
+      "title": "Clarify manifest models and WASM metadata extensions",
+      "url": "https://github.com/Yuanyuan4666/webassembly-for-the-edge/pull/1",
+      "state": "OPEN",
+      "author": "Yuanyuan4666",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "This PR updates the draft with the following changes:\n\n- Clarifies the roles of Platform Manifest, Data Collection Manifest, and SUIT Manifest.\n- Adds WASM/UBI capability metadata examples for Platform Manifest.\n- Adds runtime collection context examples for Data Collection Manifest.\n- Clarifies that SUIT-specific execution parameters are extensions associated with existing SUIT mechanisms.\n- Introduces a separate UBI Resource Constraint Policy model referenced by manifests through policy identifiers.\n\nThe changes aim to separate device capability description, runtime collection context, software delivery, and resource governance.",
+      "createdAt": "2026-10-13T03:07:03Z",
+      "updatedAt": "2026-10-13T03:46:43Z",
+      "baseRepository": "Yuanyuan4666/webassembly-for-the-edge",
+      "baseRefName": "main",
+      "baseRefOid": "32ea61062b2de83fc2354d486697ea17598eea2e",
+      "headRepository": "Yuanyuan4666/webassembly-for-the-edge",
+      "headRefName": "Yuanyuan4666-patch-1",
+      "headRefOid": "57093aae0c5d956e0f79a0b388a9cb53d9b189a6",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    }
+  ]
 }
