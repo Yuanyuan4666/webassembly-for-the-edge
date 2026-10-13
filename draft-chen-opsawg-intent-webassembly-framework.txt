@@ -5,7 +5,7 @@
 Operations and Management Area Working Group                    Z. Cheng
 Internet-Draft                                                    J. Sun
 Intended status: Informational                             China Telecom
-Expires: 25 March 2027                                 21 September 2026
+Expires: 16 April 2027                                   13 October 2026
 
 
       Intent-Driven WebAssembly Framework for Secure Management in
@@ -60,7 +60,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 25 March 2027.
+   This Internet-Draft will expire on 16 April 2027.
 
 Copyright Notice
 
@@ -515,9 +515,9 @@ Authors' Addresses
 
    Zonghua Cheng
    China Telecom
-   Email: bill.wu@huawei.com
+   Email: abc@chinatelecom.cn
 
 
    Jianping Sun
    China Telecom
-   Email: bill.wu@huawei.com
+   Email: ab@chinatelecom.cn
