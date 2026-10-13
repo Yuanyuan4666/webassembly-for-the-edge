@@ -27,11 +27,11 @@ author:
  -
     fullname: Zonghua Cheng
     organization: China Telecom
-    email: "bill.wu@huawei.com"
+    email: "abc@chinatelecom.cn"
  -
     fullname: Jianping Sun
     organization: China Telecom
-    email: "bill.wu@huawei.com"
+    email: "ab@chinatelecom.cn"
 
 normative:
 
