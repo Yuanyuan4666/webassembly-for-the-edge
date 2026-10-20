@@ -1,5 +1,5 @@
 ---
-title: "Intent-Driven WebAssembly Framework for Secure Management in Heterogeneous Edge Networks"
+title: " WebAssembly Framework for Network Management in Heterogeneous Edge Networks"
 abbrev: "Intent-Driven WebAssembly Framework"
 category: info
 
@@ -32,6 +32,10 @@ author:
     fullname: Jianping Sun
     organization: China Telecom
     email: "ab@chinatelecom.cn"
+ -
+    fullname: Yuanyuan Yang
+    organization: Huawei
+    email: "yangyuanyuan55@huawei.com"
 
 normative:
 
@@ -40,18 +44,7 @@ informative:
 
 --- abstract
 
-   This document specifies a standardized, lightweight, sandboxed
-   execution framework based on WebAssembly (WASM) for managed network
-   environments and constrained edge devices. It defines the operational
-   mechanisms for dynamic bytecode dispatching, the Universal Bytecode
-   Interface (UBI) for abstracting heterogeneous network element
-   capabilities, and the standardized metadata schemas required for
-   capability exposure, intent-driven discovery, and security audits.
-   This framework provides a systematic approach to decouple network
-   management and operational scripts from specific hardware platforms,
-   enabling secure, deterministic, and low-latency execution of
-   management tasks.
-
+   This document describes an architecture for executing WebAssembly (WASM) modules for network management on heterogeneous edge devices. It describes dynamic bytecode dispatching, the Universal Bytecode Interface (UBI) for abstracting heterogeneous network element capabilities, and metadata for capability exposure, intent-driven discovery, and security audits. The framework decouples management scripts from platform-specific interfaces. It reuses existing mechanisms for software update, payload manifests, integrity protection, and transport where applicable.
 
 --- middle
 
@@ -59,72 +52,18 @@ informative:
 
 ## Background and Problem statement
 
-   As automated network management and intent-based networking (IBN)
-   evolve, network operators increasingly rely on dynamic, closed-loop
-   control mechanisms.  Frameworks utilizing structured tool interfaces
-   (such as Model Context Protocol paradigms) are emerging to expose
-   network node capabilities for automated orchestration.  Against this
-   backdrop, the application of AI-generated code in network operations
-   is becoming increasingly widespread, and automatically generating
-   execution logic that meets management requirements via large
-   language models has become an important means to enhance operational
-   efficiency.However, executing dynamic operational scripts or telemetry-
-   collection logic directly on heterogeneous and constrained network
-   elements (e.g., edge gateways, IoT routers, MCU-based switches) poses
-   severe security risks and resource challenges.
+   As automated network management evolves, network operators increasingly rely on dynamic, closed-loop control mechanisms. Structured tool interfaces can expose network node capabilities for automated orchestration. Large language models can generate execution logic for management tasks. However, executing dynamic operational scripts or telemetry-collection logic directly on heterogeneous and constrained network devices poses security risks and resource challenges.
+Container-based execution may introduce startup and memory overhead that is unsuitable for some constrained nodes. WebAssembly [WASM] provides an alternative for lightweight management tasks, subject to the capabilities and limits of the host runtime.
 
-   Against this backdrop, the application of AI-generated code in
-   network operations is becoming increasingly widespread, and
-   automatically generating execution logic that meets management
-   requirements via large language models has become an important
-   means to enhance operational efficiency.
 
-   Traditional management virtualization technologies like Linux
-   Containers (Docker) introduce excessive boot latencies and high
-   memory footprints, making them unsuitable for constrained nodes or
-   microsecond-level telecommunication response loops.
-
-## Deterministic Execution in Managed Edge Networks
-
-   In modern distributed network architectures, edge nodes are no
-   longer simple packet-forwarding entities but have evolved into
-   compute-integrated network elements.  When network management
-   systems orchestrate dynamic traffic engineering, local fault
-   remediation, or real-time telemetry, they require on-demand
-   execution of management scripts at the closest data-plane edge.
-
-   However, managed networks enforce strict SLAs concerning jitter,
-   packet loss, and power budgets.  Traditional monolithic containers
-   fail to meet these operational constraints.  WASM sandboxing
-   bridges this gap by decoupling management logic from the underlying
-   hardware Board Support Package (BSP), transforming network-layer
-   compute into an ephemeral, managed pipeline.
+   
 
 ## Use Cases
 
-   Looking ahead, the integration of WebAssembly-based sandboxing,
-   Universal Bytecode Interfaces, and AI-driven orchestration is
-   expected to redefine the operational boundaries of autonomous
-   networks.  As 6G architectures, deterministic edge computing, and
-   large-scale high-density network deployments mature, network
-   management will shift from reactive scripting to proactive,
-   intent-driven closed-loop automation.
-
-   Specifically, future application scenarios will likely encompass:
-
-   a) Autonomous Edge Healing: AI agents dynamically generating,
-      auditing, and pushing localized remediation bytecode to edge
-      nodes within milliseconds of network anomaly detection,
-      bypassing human intervention loops.
-   b) Cross-Vendor Network Function Virtualization: Universal execution
-      of proprietary traffic engineering and monitoring tasks across
-      heterogeneous equipment vendors without requiring specialized
-      board support packages (BSPs) or proprietary firmware.
-   c) Distributed Telemetry and Deterministic Control: Distributing
-      lightweight computation pipelines across resource-constrained
-      forwarding nodes and access gateways to optimize real-time
-      telemetry processing and closed-loop control at the data-plane
-      periphery.
+   WebAssembly-based sandboxing, Universal Bytecode Interfaces, and automated orchestration support the following network management use cases:
+   a) Telemetry Collection: Distributing lightweight bytecode to edge nodes to collect and process local telemetry, returning the results needed for network management.
+   b) Policy Adjustment: Running short-lived tasks on edge nodes or compute boards for traffic inspection and service protection. Each sandbox executes a task with its own permissions and resource limits. Concurrent tasks support different user or service policies, subject to the node’s available capacity. Packet inspection uses authorized host capabilities.
+   c) Device Management: Executing device management operations through authorized host functions. Tasks can access and process local resources without uploading all raw data, supporting deployments with data-transfer or privacy constraints.
 
 # Conventions and Definitions
 
@@ -133,22 +72,18 @@ informative:
    * WASM Sandbox: A lightweight, isolated virtual machine environment
      running inside a host process, executing WebAssembly bytecode with
      linear memory isolation.
-   * UBI (Universal Bytecode Interface): A standardized abstraction layer
-     of host functions injected into the WASM runtime, shielding
-     management bytecode from hardware platform-specific details.
+   * UBI (Universal Bytecode Interface): An abstraction layer of host functions injected into the WASM runtime, shielding management bytecode from hardware platform-specific details.
    * Node Profile: A structured metadata manifest that declares a network
      element's exposed capabilities, supported operations, and required
-     host function privileges.
+     host function privileges. Capability advertisement does not itself authorize task execution.
    * UBI-DP (Universal Bytecode Distribution Protocol): The encapsulation
      and messaging mechanism used to dispatch compiled WASM bytecode
      binaries along with metadata across network management channels.
-   * WIT (Wasm Interface Type): A WebAssembly standard IDL format used to
-     define types and functions crossing the sandbox boundary.
+   * WIT (WebAssembly Interface Types): The interface definition language used by the WebAssembly Component Model to define types and functions crossing component boundaries.
 
 #  Architectural Framework Overview
 
-   The proposed framework consists of three operational planes
-   aligned with standard network management architectures:
+   The proposed framework consists of three logical planes. They separate task orchestration, policy coordination, and execution on edge devices:
 
 ~~~~
    +--------------------------------------------------------+
@@ -156,52 +91,37 @@ informative:
    | [Intent Parsing] -> [Workflow Compile] -> [Node Profile]
    +--------------------------------------------------------+
                                 |
-                                v (UBI-DP Dispatching)
+                                v (Task and constraints)
    +--------------------------------------------------------+
    |        Coordination & Policy Plane (Control Layer)     |
-   | [Static Audit Matrix] -> [CaaS Pool] -> [SHA256 Sign]  |
+   | [Static Audit Matrix] -> [CaaS Pool] -> [Hash and Sign]|
    +--------------------------------------------------------+
                                 |
-                                v
-   +--------------------------------------------------------+
-   |        Embodied Execution Plane (Device Layer)         |
-   | [Warm Process Pool] -> [WASM Sandbox] -> [UBI Drivers] |
-   +--------------------------------------------------------+
+                                v(UBI-DP Dispatching)
+   +----------------------------------------------------------------------+
+   |             Embodied Execution Plane (Device Layer)                  |
+   | [WASM Sandbox] -> [UBI Host Functions] -> [Platform Implementations] |
+   +----------------------------------------------------------------------+
 ~~~~
+
  {:#arch title="Intent based Framework" artwork-align="center"}
 
-   1. Intent & Orchestration Plane: Translates network operator intents
-      into structured workflow models and maps required management tools.
-   2. Coordination & Policy Plane: Acts as the central management
-      controller.  It audits requested tasks against security policies,
-      performs deterministic compilation via Compilation-as-a-Service
-      (CaaS), and issues cryptographically signed bytecode envelopes.
-   3. Embodied Execution Plane: The physical edge node running embedded
-      WASM runtimes. It manages a warm process pool to guarantee low
-      sandbox setup latency (<10ms) and restricts hardware access via
-      UBI symbols.
+   1. Intent & Orchestration Plane: Translates network operator intents into structured workflow models and maps required management tools. It identifies target nodes using Node Profiles and passes task constraints to the Coordination & Policy Plane.
+   2.  Coordination & Policy Plane: Acts as the central management controller. It audits requested tasks against security policies, compiles modules via Compilation-as-a-Service (CaaS), and issues cryptographically signed bytecode envelopes. The signed metadata binds the module digest to its approved host functions and resource limits.
+   3.  Embodied Execution Plane: The physical edge node running embedded WASM runtimes. It validates the module and its associated policy, enforces resource limits, and restricts device access through authorized UBI host functions. A warm process pool retains initialized runtime processes to reduce sandbox setup time; task state and permissions are reset before reuse.
+  Host functions expose the sandbox host’s basic operations, such as reading a counter or updating a permitted policy. The UBI defines the interface visible to the module; platform-specific implementations access local APIs, drivers, or management services. Each invocation is checked against the task’s permissions.
 
 # Core Operational Mechanisms
 
 ## Dynamic Resource and Capability Discovery Mechanism
 
-   To establish reliable task routing, the management framework relies
-   on an automated Discovery Mechanism to map requirements to
-   heterogeneous resources:
+The discovery mechanism maps task requirements to available node capabilities:
 
-   1. Capability Advertisement: Upon network attachment or status update,
-      the Edge Node broadcasts or registers its capability envelope
-      (Node Profile).  For highly constrained nodes, this registration
-      SHOULD use CoAP {{?RFC7252}}.  For standard elements, it MAY use gRPC
-      or HTTP/3 {{?RFC9114}} over TLS.
+   1. Capability Advertisement: An edge node registers or updates its Node Profile using an existing management channel, such as CoAP {{?RFC7252}} or HTTP/3 {{?RFC9114}}.
 
-   2. Semantic Feature Graph: The Central Management Controller parses
-      incoming profiles into an active Resource Capability Graph cataloged
-      by sensing domains and computational budgets.
+   2. Semantic Feature Graph: The controller maintains a capability catalog, optionally represented as a graph, including supported operations and resource budgets.
 
-   3. Intent-Driven Matching Filter: When an operator emits a management
-      workflow, the controller queries the feature graph to match valid
-      target nodes supporting the required UBI primitives.
+   3. Intent-Driven Matching Filter: The controller selects nodes supporting the required UBI primitives and resource limits.
 
 ## Bytecode Dispatching Lifecycle
 
