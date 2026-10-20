@@ -38,9 +38,30 @@ author:
     email: "yangyuanyuan55@huawei.com"
 
 normative:
+  RFC2119:
+  RFC8174:
 
 informative:
+  RFC7252:
+  RFC7959:
+  RFC9019:
+  RFC9052:
+  RFC9110:
+  RFC9114:
+  RFC9124:
+  I-D.ietf-opsawg-rfc5706bis:
 
+  WASM:
+    title: "WebAssembly Core Specification"
+    target: "https://webassembly.github.io/spec/core/"
+    author:
+      - org: "WebAssembly Community Group"
+
+  WIT:
+    title: "The WIT text format"
+    target: "https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md"
+    author:
+      - org: "WebAssembly Community Group"
 
 --- abstract
 
@@ -53,7 +74,7 @@ informative:
 ## Background and Problem statement
 
    As automated network management evolves, network operators increasingly rely on dynamic, closed-loop control mechanisms. Structured tool interfaces can expose network node capabilities for automated orchestration. Large language models can generate execution logic for management tasks. However, executing dynamic operational scripts or telemetry-collection logic directly on heterogeneous and constrained network devices poses security risks and resource challenges.
-Container-based execution may introduce startup and memory overhead that is unsuitable for some constrained nodes. WebAssembly [WASM] provides an alternative for lightweight management tasks, subject to the capabilities and limits of the host runtime.
+Container-based execution may introduce startup and memory overhead that is unsuitable for some constrained nodes. WebAssembly {{?WASM}} provides an alternative for lightweight management tasks, subject to the capabilities and limits of the host runtime.
 
 
    
@@ -79,7 +100,9 @@ Container-based execution may introduce startup and memory overhead that is unsu
    * UBI-DP (Universal Bytecode Distribution Protocol): The encapsulation
      and messaging mechanism used to dispatch compiled WASM bytecode
      binaries along with metadata across network management channels.
-   * WIT (WebAssembly Interface Types): The interface definition language used by the WebAssembly Component Model to define types and functions crossing component boundaries.
+   * WIT (WebAssembly Interface Types): The interface definition language
+  used by the WebAssembly Component Model to define types and functions
+  crossing component boundaries {{?WIT}}.
 
 #  Architectural Framework Overview
 
@@ -125,34 +148,22 @@ The discovery mechanism maps task requirements to available node capabilities:
 
 ## Bytecode Dispatching Lifecycle
 
-   Bytecode distribution MUST be atomic, secure, and self-contained.
-   The network controller utilizes the UBI-DP format to encapsulate the
-   binary and its metadata payload through the following lifecycle:
-
+   Bytecode distribution MUST be atomic, secure, and self-contained. The edge node MUST NOT execute an incompletely received or unverified module. The network controller utilizes the UBI-DP format to encapsulate the
+   binary and its metadata payload including the module digest, task permissions, and resource limits, through the following lifecycle:
    Step 1: Discovery. Edge Node registers its profile, declaring local
      UBI primitives.
-   Step 2: Audit. Controller matches permissions via the Static Symbol
-     Audit Matrix.
-   Step 3: Transport. Controller compiles code, computes SHA-256
-     fingerprints, signs payloads, and transmits via HTTP Semantics
-     {{?RFC9110}} or CoAP {{?RFC7252}}.
-   Step 4: Execution. Edge Node validates signatures, provisions execution
-     threads, isolates environments, and executes the authorized module.
-
+   Step 2: Audit. Controller compiles the code and checks the resulting module’s imports against supported UBI primitives and task permissions via the Static Symbol Audit Matrix.
+   Step 3: Transport. Controller computes the module’s SHA-256 digest, signs the metadata containing this digest, task permissions, and resource limits, and transmits the module and signed metadata via HTTP {{?RFC9110}} or CoAP {{?RFC7252}}.
+   Step 4: Execution. Edge Node validates signatures and the module digest, checks local policy, provisions execution threads, isolates environments, and executes the authorized module with its approved permissions and resource limits.
+   
 ## WASM Bytecode Semantic Properties and Core Capabilities
 
-   WASM bytecode dispatched via UBI-DP MUST conform to strict structural
-   and behavioral boundaries:
+   WASM bytecode uses features supported by the target runtime and executes within the following limits:
 
-   a) Single-Threaded Non-Blocking Loop: To prevent thread starvation on
-      low-power nodes, bytecode SHALL NOT spawn guest-level OS threads.
-   b) Virtual Memory Page Restriction: Memory configuration uses fixed
-      WebAssembly Memory Pages (1 page = 64 KB), statically locked at
-      compilation.
-   c) AOT Compliant Structure: Modules MUST allow instantaneous
-      translation into native machine instructions via AOT engines,
-      bypassing JIT overhead.
-
+   a) Thread Restrictions: The runtime restricts thread creation and execution time according to node policy.
+   b) Memory Limits: The runtime enforces a maximum linear-memory size for each module.
+   c) AOT Support: Ahead-of-time compilation may reduce runtime compilation overhead where supported.
+   
 ## Universal Bytecode Interface (UBI) Specifications
 
 ## Telemetry and Sensing Domain
@@ -201,38 +212,23 @@ The discovery mechanism maps task requirements to available node capabilities:
 
 ## Capability Profiling Schema (Node Profile)
 
-JSON Schema and payload definitions preserved to define standard data
-models for node inventory management
+The Node Profile describes runtime features, supported UBI interfaces, and resource limits. The detailed schema is to be defined.
 
 ## SUIT Manifest and Bytecode Distribution Envelope
 
-   To securely deliver WebAssembly (WASM) bytecode components to
-   constrained edge nodes, the distribution framework adopts the
-   Software Updates for Internet of Things (SUIT) manifest architecture.
-   The management controller encapsulates the compiled WASM binary and
-   its execution policy within a CBOR-based SUIT Manifest, protected
-   via CBOR Object Signing and Encryption (COSE) {{?RFC9052}}.
+   To securely deliver WebAssembly (WASM) bytecode components to constrained edge nodes, the distribution framework adopts the Software Updates for Internet of Things (SUIT) architecture {{?RFC9019}} and manifest information model {{?RFC9124}}. The management controller describes the compiled WASM binary in a SUIT manifest, protected via CBOR Object Signing and Encryption (COSE) {{?RFC9052}}. The mapping of WASM execution policy parameters to SUIT metadata remains to be defined.
 
-   The SUIT manifest enforces the strict sequential workflow required
-   for trusted edge execution:
+   The framework uses the following workflow before executing the WASM module:
 
    1. Manifest Authentication: The recipient edge node validates the
       COSE signature of the SUIT manifest using pre-configured trust
       anchors.
-   2. Applicability Verification: The device checks whether the
-      manifest's target hardware identifiers, vendor IDs, and class IDs
-      match its local hardware profile.
-   3. Dependency Resolution: The node verifies and resolves any required
-      UBI interface dependencies declared in the manifest.
-   4. Payload Fetching: The standalone core .wasm binary payload is
-      retrieved via secure transport (e.g., CoAP block-wise transfer
-      {{?RFC7252}}).
-   5. Installation & Sandbox Initialization: The verified WASM module is
-      loaded into the isolated runtime environment with static memory
-      page constraints and authorized UBI host symbols.
+   2. Applicability Verification: The device checks whether the manifest's target identifiers, including vendor IDs and class IDs, match its local device profile.
+   3. Dependency Resolution: The node verifies that the UBI interfaces required by the module are available.
+   4. Payload Fetching: The standalone core .wasm binary payload is retrieved and its digest is verified against the authenticated manifest. CoAP block-wise transfer {{?RFC7959}} may be used with appropriate transport or object security.
+   5. Installation & Sandbox Initialization: The verified WASM module is loaded into the isolated runtime environment with approved memory page constraints and authorized UBI host symbols. The execution policy is authenticated, bound to the module digest, and checked against local authorization policy before these permissions are granted.
 
-   The structural representation of the SUIT manifest payload embedding
-   the WASM execution parameters is illustrated conceptually below:
+   The following JSON conceptually illustrates the payload metadata and WASM execution parameters. It is not a valid SUIT manifest encoding. The runtime parameters are illustrative extensions, and the digest is a placeholder.
 
 ~~~~
    {
@@ -252,7 +248,7 @@ models for node inventory management
            "digest": {
              "algorithm": "SHA-256",
              "value":
-             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+             "<SHA-256 digest of the WASM payload>"
            }
          }
        }
@@ -274,54 +270,27 @@ models for node inventory management
 
 # Security Considerations
 
-   This section details the security mechanisms, static analysis controls,
-   and boundary enforcement strategies required to ensure safe bytecode
-   execution within managed network environments.
+   This section describes controls for executing bytecode within managed network environments.
 
 ## Static Symbol Audit Matrix and Link-Time Verification
 
-   To prevent malicious or corrupted management code from executing
-   unauthorized operations, the Management Controller MUST execute a
-   mandatory Ahead-of-Time Static Symbol Audit before bytecode
-   encapsulation.
+   To prevent malicious or corrupted management code from executing unauthorized operations, the Management Controller MUST execute a static symbol audit before bytecode encapsulation. The node MUST also check module imports against its available interfaces and the task's approved permissions before instantiation.
 
-   The audit pipeline enforces the following validation steps for
-   self-contained core modules:
+   The audit pipeline enforces the following validation steps for WebAssembly core modules:
 
-   1. Import Table Extraction: The audit engine parses the WASM binary
-      structure, filtering all tokens located within the "Import Section".
-      This maps every external host function identifier requested by the
-      bytecode.
-   2. Capability-Matrix Intersection: The extracted import symbols are
-      cross-checked against the specific allowed_host_symbols array
-      declared in the node's profile envelope.
-   3. Link-Time Rejection: The binary is scanned to ensure no raw
-      hardware address references bypass the UBI layer. Any mismatch or
-      inclusion of unauthorized tokens SHALL result in an immediate
-      Link-Time rejection, aborting the transmission and returning
-      Error 400.
+   1. Import Table Extraction: The audit engine parses the WASM import section to identify imported functions and other imported entities, including their names and types.
+   2. Capability-Matrix Intersection: The extracted import symbols are cross-checked against the node's supported capabilities and the permissions approved for the task.
+   3. Link-Time Rejection: Unresolved, type-incompatible, or unauthorized imports SHALL result in rejection of the module before instantiation. Modules that fail the controller's audit SHALL NOT be distributed. Import checks alone do not establish functional correctness or enforce restrictions on runtime argument values.
 
 ## Sandbox Boundary Enforcement
 
-   The execution of dynamically provisioned bytecode on remote physical
-   devices mandates severe security practices. This framework achieves
-   endogenous security via layers of defensive validation:
+   The execution of dynamically provisioned bytecode on remote physical devices requires isolation and access controls. The framework applies the following controls:
 
-   1. Linear Memory Boundary Isolation: Embedded runtimes MUST
-      leverage virtual memory page capping to ensure that buffer
-      overflows inside the sandboxed application cannot compromise
-      host address spaces.
-   2. File System Namespacing: Runtimes MUST map the sandbox internal
-      root '/' directory to an ephemeral host path using chroot
-      primitives to avoid directory traversal vectors.
-
+   1. Linear Memory Boundary Isolation: Embedded runtimes MUST enforce WebAssembly memory bounds and per-task resource limits. Host functions MUST validate arguments and access permissions before accessing host resources.
+   2. File System Namespacing: If file-system access is provided, runtimes and host functions MUST restrict access to explicitly authorized resources and prevent access outside that scope.
 # Operational Considerations
 
 TBC per {{?I-D.opsarea-rfc5706bis}}.
-
-# Security Considerations
-
-TODO Security
 
 
 # IANA Considerations
