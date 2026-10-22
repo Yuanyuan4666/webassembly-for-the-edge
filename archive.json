@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-10-20T02:56:11.586281+00:00",
+  "timestamp": "2026-10-22T02:49:21.752996+00:00",
   "repo": "Yuanyuan4666/webassembly-for-the-edge",
   "labels": [
     {
@@ -81,6 +81,65 @@
       "mergeCommit": null,
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 2,
+      "id": "PR_kwDOUi_W8M8AAAABJkYJEg",
+      "title": "Update draft-chen-opsawg-intent-webassembly-framework.md",
+      "url": "https://github.com/Yuanyuan4666/webassembly-for-the-edge/pull/2",
+      "state": "OPEN",
+      "author": "Yuanyuan4666",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Clarify the use cases and responsibilities of the three architectural planes. Describe host functions, platform-specific implementations, and warm process reuse. Refine module validation, task permissions, resource limits, and sandbox controls. Clarify the SUIT example and add supporting references.",
+      "createdAt": "2026-10-20T14:15:21Z",
+      "updatedAt": "2026-10-20T14:29:52Z",
+      "baseRepository": "Yuanyuan4666/webassembly-for-the-edge",
+      "baseRefName": "main",
+      "baseRefOid": "32b38fc9a128196b95bc2813bda7b04de4a832a3",
+      "headRepository": "Yuanyuan4666/webassembly-for-the-edge",
+      "headRefName": "Yuanyuan4666-patch-2",
+      "headRefOid": "94e2b5c49ed2b2c41611952f7f004c2e489ef116",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOUi_W8M8AAAABTPiVWw",
+          "commit": {
+            "abbreviatedOid": "81d02f9"
+          },
+          "author": "github-actions",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-20T14:15:49Z",
+          "updatedAt": "2026-10-20T14:15:49Z",
+          "comments": [
+            {
+              "originalPosition": 94,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-10-20T14:15:49Z",
+              "updatedAt": "2026-10-20T14:15:49Z"
+            },
+            {
+              "originalPosition": 75,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-10-20T14:15:49Z",
+              "updatedAt": "2026-10-20T14:15:49Z"
+            },
+            {
+              "originalPosition": 40,
+              "body": "````suggestion\n\n````",
+              "createdAt": "2026-10-20T14:15:49Z",
+              "updatedAt": "2026-10-20T14:15:49Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
