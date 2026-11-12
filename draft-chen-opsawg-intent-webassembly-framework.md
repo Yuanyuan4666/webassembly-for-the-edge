@@ -49,7 +49,7 @@ informative:
 
 --- abstract
 
-   This document describes an architecture for executing WebAssembly (WASM) modules for network management on heterogeneous edge devices. It describes dynamic bytecode dispatching, the Universal Bytecode Interface (UBI) for abstracting heterogeneous network element capabilities, and metadata for capability exposure, intent-driven discovery, and security audits. The framework decouples management scripts from platform-specific interfaces. It reuses existing mechanisms for software update, payload manifests, integrity protection, and transport where applicable.
+   This document describes an architecture for executing WebAssembly (WASM) modules for network management on heterogeneous edge devices. It describes dynamic bytecode dispatching, the Universal Bytecode Interface (UBI) for abstracting heterogeneous network element capabilities, and metadata models for capability exposure, bytecode deployment, execution context, intent-driven discovery, and security audits. The framework decouples management scripts from platform-specific interfaces. It reuses existing mechanisms for software update, payload manifests, integrity protection, and transport where applicable.
 
 --- middle
 
@@ -77,10 +77,14 @@ Container-based execution may introduce startup and memory overhead that is unsu
    * WASM Sandbox: A lightweight, isolated virtual machine environment
      running inside a host process, executing WebAssembly bytecode with
      linear memory isolation.
-   * UBI (Universal Bytecode Interface): An abstraction layer of host functions injected into the WASM runtime, shielding management bytecode from hardware platform-specific details.
-   * Node Profile: A structured metadata manifest that declares a network
-     element's exposed capabilities, supported operations, and required
-     host function privileges. Capability advertisement does not itself authorize task execution.
+   * UBI (Universal Bytecode Interface): An abstraction layer that exposes
+     host functions to WASM modules. UBI interfaces describe available
+     device capabilities and hide hardware-specific implementations.
+   * Node Profile: A structured metadata model used by the framework to
+     advertise a network element's supported UBI interfaces, execution
+     capabilities, runtime information, and required host function
+     privileges. Capability advertisement does not itself authorize task
+     execution.
    * UBI-DP (Universal Bytecode Distribution Protocol): The encapsulation
      and messaging mechanism used to dispatch compiled WASM bytecode
      binaries along with metadata across network management channels.
@@ -93,7 +97,7 @@ Container-based execution may introduce startup and memory overhead that is unsu
 ~~~~
    +--------------------------------------------------------+
    |        Intent & Orchestration Plane (Management)       |
-   | [Intent Parsing] -> [Workflow Compile] -> [Node Profile]
+   | [Intent Parsing] -> [Workflow Compile] -> [Cap. Match] |
    +--------------------------------------------------------+
                                 |
                                 v (Task and constraints)
@@ -111,7 +115,7 @@ Container-based execution may introduce startup and memory overhead that is unsu
 {: #arch title="Intent based Framework" artwork-align="center"}
 
    1. Intent & Orchestration Plane: Translates network operator intents into structured workflow models and maps required management tools. It identifies target nodes using Node Profiles and passes task constraints to the Coordination & Policy Plane.
-   2.  Coordination & Policy Plane: Acts as the central management controller. It audits requested tasks against security policies, compiles modules via Compilation-as-a-Service (CaaS), and issues cryptographically signed bytecode envelopes. The signed metadata binds the module digest to its approved host functions and resource limits.
+   2.  Coordination & Policy Plane: Acts as the central management controller. It audits requested tasks against security policies, compiles modules via Compilation-as-a-Service (CaaS), and generates cryptographically signed bytecode distribution packages. The signed metadata binds the module digest to its approved host functions and resource limits.
    3.  Embodied Execution Plane: The physical edge node running embedded WASM runtimes. It validates the module and its associated policy, enforces resource limits, and restricts device access through authorized UBI host functions. A warm process pool retains initialized runtime processes to reduce sandbox setup time; task state and permissions are reset before reuse.
   Host functions expose the sandbox host’s basic operations, such as reading a counter or updating a permitted policy. The UBI defines the interface visible to the module; platform-specific implementations access local APIs, drivers, or management services. Each invocation is checked against the task’s permissions.
 
@@ -121,7 +125,7 @@ Container-based execution may introduce startup and memory overhead that is unsu
 
 The discovery mechanism maps task requirements to available node capabilities:
 
-   1. Capability Advertisement: An edge node registers or updates its Node Profile using an existing management channel, such as CoAP {{?RFC7252}} or HTTP/3 {{?RFC9114}}.
+   1. Capability Advertisement: An edge node registers or updates its Node Profile using an existing management channel, such as CoAP {{?RFC7252}} or HTTP/3 {{?RFC9114}}. The profile describes platform information, supported UBI interfaces, and available execution capabilities.
 
    2. Semantic Feature Graph: The controller maintains a capability catalog, optionally represented as a graph, including supported operations and resource budgets.
 
@@ -203,10 +207,79 @@ The discovery mechanism maps task requirements to available node capabilities:
 
 # Metadata Definitions and Schemas
 
-## Capability Profiling Schema (Node Profile)
+The framework uses three types of manifests for different lifecycle
+stages:
 
-JSON Schema and payload definitions preserved to define standard data
-models for node inventory management
+1. Platform Manifest: describes device capabilities and execution
+environment.
+
+2. Data Collection Manifest: describes data subscriptions and runtime
+collection context.
+
+3. SUIT Manifest: describes secure software delivery and execution
+parameters for WASM components.
+
+These manifests address different lifecycle stages and avoid
+duplicating information.
+
+## Platform Capability Manifest
+
+The Platform Manifest describes the capabilities and execution environment of an edge node.
+
+It can reuse the platform information model defined in
+draft-ietf-opsawg-collected-data-manifest.
+
+The WASM/UBI extension may include:
+
+- WASM runtime information;
+- supported UBI interfaces;
+- available host functions;
+- security capabilities.
+
+~~~~
+{
+  "ubi-wasm-extension:server-metadata": {
+    "runtime-version": "wasm-runtime-v1",
+    "supported-ubi-interfaces": [
+      "telemetry.read-metric",
+      "actuation.gpio-write"
+    ]
+  },
+  "ubi-wasm-extension:governance-and-security": {
+    "authentication-supported": [
+      "mTLS_v1.3"
+    ],
+    "capability-tokens-defined": [
+      "telemetry_read",
+      "net_outbound"
+    ]
+  }
+}
+~~~~
+
+## Data Collection Manifest
+
+The Data Collection Manifest describes data collection subscriptions and runtime collection context.
+
+It reuses the data collection model defined in
+draft-ietf-opsawg-collected-data-manifest.
+
+The manifest may reference external resource policies using policy identifiers.
+
+~~~~
+{
+ "data-collection": {
+    "platform-id": "edge-node-hetero-01",
+    "subscription-id": 1001,
+    "current-period": 300,
+    "policy-id": "tier_heavy_compute",
+    "runtime-status": {
+       "cpu-percent": 87.5,
+       "action-triggered": "forced-downsampling"
+    }
+ }
+}
+~~~~
 
 ## SUIT Manifest and Bytecode Distribution Envelope
 
@@ -235,46 +308,64 @@ models for node inventory management
       loaded into the isolated runtime environment with static memory
       page constraints and authorized UBI host symbols.
 
-   The structural representation of the SUIT manifest payload embedding
-   the WASM execution parameters is illustrated conceptually below:
+   The following example illustrates possible WASM-specific execution parameters associated with a SUIT Manifest. Existing SUIT mechanisms, including manifest authentication, component identification, applicability conditions, and payload retrieval, follow the SUIT specification.
+
+The runtime-parameters field represents a framework-specific extension for constraining WASM execution. The definition of these parameters in a SUIT Manifest requires corresponding SUIT extension definitions.
 
 ~~~~
-   {
-     "suit-manifest-version": 1,
-     "suit-sequence-number": 42,
-     "suit-common": {
-       "suit-components": [ "wasm-telemetry-module" ]
-     },
-     "suit-install": [
-       {
-         "suit-condition-vendor-id": "example-vendor-id",
-         "suit-condition-class-id": "example-edge-class-id"
-       },
-       {
-         "suit-directive-fetch": {
-           "uri": "coap://management-server.local/wasm/module.wasm",
-           "digest": {
-             "algorithm": "SHA-256",
-             "value":
-             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-           }
-         }
-       }
-     ],
-     "suit-execute": [
-       {
-         "runtime-parameters": {
-           "allowed_memory_pages_max": 256,
-           "execution_timeout_ms": 10000,
-           "allowed_host_symbols": [
-             "telemetry.read-metric",
-             "actuation.gpio-write"
-           ]
-         }
-       }
-     ]
-   }
+{
+  "suit-manifest-version": 1,
+  "suit-sequence-number": 42,
+  "suit-common": {
+    "suit-components": [
+      "wasm-telemetry-module"
+    ]
+  },
+  "suit-install": [
+    {
+      "suit-condition-vendor-id": "example-vendor-id",
+      "suit-condition-class-id": "example-edge-class-id"
+    },
+    {
+      "suit-directive-fetch": {
+        "uri": "coap://management-server.local/wasm/module.wasm",
+        "digest": {
+          "algorithm": "SHA-256",
+          "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "suit-execute": [
+    {
+      "runtime-parameters": {
+        "allowed-memory-pages-max": 256,
+        "execution-timeout-ms": 10000,
+        "allowed-host-functions": [
+          "telemetry.read-metric",
+          "actuation.gpio-write"
+        ]
+      }
+    }
+  ]
+}
 ~~~~
+
+## UBI Resource Constraint Policy
+
+Resource constraints are modeled separately from manifests.
+
+Platform Manifest describes available capabilities.
+Data Collection Manifest references runtime policies.
+SUIT Manifest describes execution constraints.
+
+The resource policy defines:
+- concurrency limits;
+- rate limits;
+- sandbox quotas;
+- resource isolation rules.
+
+Manifests reference the policy using policy identifiers.
 
 # Security Considerations
 
@@ -297,13 +388,12 @@ models for node inventory management
       This maps every external host function identifier requested by the
       bytecode.
    2. Capability-Matrix Intersection: The extracted import symbols are
-      cross-checked against the specific allowed_host_symbols array
-      declared in the node's profile envelope.
+      cross-checked against the allowed-host-functions list
+      declared in the Node Profile or execution policy.
    3. Link-Time Rejection: The binary is scanned to ensure no raw
       hardware address references bypass the UBI layer. Any mismatch or
       inclusion of unauthorized tokens SHALL result in an immediate
-      Link-Time rejection, aborting the transmission and returning
-      Error 400.
+      Link-Time rejection, aborting the transmission.
 
 ## Sandbox Boundary Enforcement
 
