@@ -40,6 +40,11 @@ author:
 normative:
 
 informative:
+  WASM:
+    title: "WebAssembly Core Specification"
+    target: "https://webassembly.github.io/spec/core/"
+    author:
+      - org: "WebAssembly Community Group"
 
 
 --- abstract
@@ -56,7 +61,7 @@ informative:
 Container-based execution may introduce startup and memory overhead that is unsuitable for some constrained nodes. WebAssembly [WASM] provides an alternative for lightweight management tasks, subject to the capabilities and limits of the host runtime.
 
 
-   
+
 
 ## Use Cases
 
@@ -103,8 +108,7 @@ Container-based execution may introduce startup and memory overhead that is unsu
    | [WASM Sandbox] -> [UBI Host Functions] -> [Platform Implementations] |
    +----------------------------------------------------------------------+
 ~~~~
-
- {:#arch title="Intent based Framework" artwork-align="center"}
+{: #arch title="Intent based Framework" artwork-align="center"}
 
    1. Intent & Orchestration Plane: Translates network operator intents into structured workflow models and maps required management tools. It identifies target nodes using Node Profiles and passes task constraints to the Coordination & Policy Plane.
    2.  Coordination & Policy Plane: Acts as the central management controller. It audits requested tasks against security policies, compiles modules via Compilation-as-a-Service (CaaS), and issues cryptographically signed bytecode envelopes. The signed metadata binds the module digest to its approved host functions and resource limits.
