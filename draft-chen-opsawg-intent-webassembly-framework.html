@@ -4,41 +4,32 @@
 <meta charset="utf-8">
 <meta content="Common,Latin" name="scripts">
 <meta content="initial-scale=1.0" name="viewport">
-<title>Intent-Driven WebAssembly Framework for Secure Management in Heterogeneous Edge Networks</title>
+<title>WebAssembly Framework for Network Management in Heterogeneous Edge Networks</title>
 <meta content="Zonghua Cheng" name="author">
 <meta content="Jianping Sun" name="author">
+<meta content="Yuanyuan Yang" name="author">
 <meta content="
-       This document specifies a standardized, lightweight, sandboxed
-   execution framework based on WebAssembly (WASM) for managed network
-   environments and constrained edge devices. It defines the operational
-   mechanisms for dynamic bytecode dispatching, the Universal Bytecode
-   Interface (UBI) for abstracting heterogeneous network element
-   capabilities, and the standardized metadata schemas required for
-   capability exposure, intent-driven discovery, and security audits.
-   This framework provides a systematic approach to decouple network
-   management and operational scripts from specific hardware platforms,
-   enabling secure, deterministic, and low-latency execution of
-   management tasks. 
+       This document describes an architecture for executing WebAssembly (WASM) modules for network management on heterogeneous edge devices. It describes dynamic bytecode dispatching, the Universal Bytecode Interface (UBI) for abstracting heterogeneous network element capabilities, and metadata for capability exposure, intent-driven discovery, and security audits. The framework decouples management scripts from platform-specific interfaces. It reuses existing mechanisms for software update, payload manifests, integrity protection, and transport where applicable. 
     " name="description">
-<meta content="xml2rfc 3.34.1" name="generator">
+<meta content="xml2rfc 3.35.0" name="generator">
 <meta content="intent" name="keyword">
 <meta content="webassembly" name="keyword">
 <meta content="edge" name="keyword">
 <meta content="draft-chen-opsawg-intent-webassembly-framework-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.34.1
-    Python 3.14.8
-    ConfigArgParse 1.8.0
+  xml2rfc 3.35.0
+    Python 3.14.10
+    ConfigArgParse 1.9.0
     google-i18n-address 3.1.1
     intervaltree 3.2.1
     Jinja2 3.1.6
     lxml 6.1.1
     natsort 8.4.0
-    platformdirs 4.12.2
+    platformdirs 4.14.3
     pycountry 24.6.1
     PyYAML 6.0.3
     requests 2.33.1
-    wcwidth 0.9.1
+    wcwidth 0.9.4
 -->
 <link href="draft-chen-opsawg-intent-webassembly-framework.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
@@ -1039,7 +1030,7 @@ svg {
   & :is([stroke="white"], [stroke^="#fff"]) {
     stroke: var(--background-color);
   }
-  & :is([fill="black"], [fill^="#000"], :not([fill])) {
+  & :is([fill="black"], [fill^="#000"], :not([fill], [fill] *)) {
     fill: var(--text-color);
   }
   & :is([fill="white"], [fill^="#fff"]) {
@@ -1054,11 +1045,11 @@ svg {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Intent-Driven WebAssembly Framework</td>
-<td class="right">October 2026</td>
+<td class="right">November 2026</td>
 </tr></thead>
 <tfoot><tr>
-<td class="left">Cheng &amp; Sun</td>
-<td class="center">Expires 16 April 2027</td>
+<td class="left">Cheng, et al.</td>
+<td class="center">Expires 16 May 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1062,12 @@ svg {
 <dd class="internet-draft">draft-chen-opsawg-intent-webassembly-framework-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-10-13" class="published">13 October 2026</time>
+<time datetime="2026-11-12" class="published">12 November 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-04-16">16 April 2027</time></dd>
+<dd class="expires"><time datetime="2027-05-16">16 May 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1087,23 +1078,17 @@ svg {
       <div class="author-name">J. Sun</div>
 <div class="org">China Telecom</div>
 </div>
+<div class="author">
+      <div class="author-name">Y. Yang</div>
+<div class="org">Huawei</div>
+</div>
 </dd>
 </dl>
 </div>
-<h1 id="title">Intent-Driven WebAssembly Framework for Secure Management in Heterogeneous Edge Networks</h1>
+<h1 id="title">WebAssembly Framework for Network Management in Heterogeneous Edge Networks</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document specifies a standardized, lightweight, sandboxed
-   execution framework based on WebAssembly (WASM) for managed network
-   environments and constrained edge devices. It defines the operational
-   mechanisms for dynamic bytecode dispatching, the Universal Bytecode
-   Interface (UBI) for abstracting heterogeneous network element
-   capabilities, and the standardized metadata schemas required for
-   capability exposure, intent-driven discovery, and security audits.
-   This framework provides a systematic approach to decouple network
-   management and operational scripts from specific hardware platforms,
-   enabling secure, deterministic, and low-latency execution of
-   management tasks.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document describes an architecture for executing WebAssembly (WASM) modules for network management on heterogeneous edge devices. It describes dynamic bytecode dispatching, the Universal Bytecode Interface (UBI) for abstracting heterogeneous network element capabilities, and metadata for capability exposure, intent-driven discovery, and security audits. The framework decouples management scripts from platform-specific interfaces. It reuses existing mechanisms for software update, payload manifests, integrity protection, and transport where applicable.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1140,7 +1125,7 @@ svg {
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 16 April 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 16 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1170,16 +1155,13 @@ svg {
         </h2>
 <nav class="toc"><ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
-            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-background-and-problem-stat" class="internal xref">Background and Problem statement</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
-                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-deterministic-execution-in-" class="internal xref">Deterministic Execution in Managed Edge Networks</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
-                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-use-cases" class="internal xref">Use Cases</a></p>
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-use-cases" class="internal xref">Use Cases</a></p>
 </li>
             </ul>
 </li>
@@ -1277,75 +1259,19 @@ svg {
         <h3 id="name-background-and-problem-stat">
 <a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-background-and-problem-stat" class="section-name selfRef">Background and Problem statement</a>
         </h3>
-<p id="section-1.1-1">As automated network management and intent-based networking (IBN)
-   evolve, network operators increasingly rely on dynamic, closed-loop
-   control mechanisms.  Frameworks utilizing structured tool interfaces
-   (such as Model Context Protocol paradigms) are emerging to expose
-   network node capabilities for automated orchestration.  Against this
-   backdrop, the application of AI-generated code in network operations
-   is becoming increasingly widespread, and automatically generating
-   execution logic that meets management requirements via large
-   language models has become an important means to enhance operational
-   efficiency.However, executing dynamic operational scripts or telemetry-
-   collection logic directly on heterogeneous and constrained network
-   elements (e.g., edge gateways, IoT routers, MCU-based switches) poses
-   severe security risks and resource challenges.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
-<p id="section-1.1-2">Against this backdrop, the application of AI-generated code in
-   network operations is becoming increasingly widespread, and
-   automatically generating execution logic that meets management
-   requirements via large language models has become an important
-   means to enhance operational efficiency.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
-<p id="section-1.1-3">Traditional management virtualization technologies like Linux
-   Containers (Docker) introduce excessive boot latencies and high
-   memory footprints, making them unsuitable for constrained nodes or
-   microsecond-level telecommunication response loops.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="deterministic-execution-in-managed-edge-networks">
-<section id="section-1.2">
-        <h3 id="name-deterministic-execution-in-">
-<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-deterministic-execution-in-" class="section-name selfRef">Deterministic Execution in Managed Edge Networks</a>
-        </h3>
-<p id="section-1.2-1">In modern distributed network architectures, edge nodes are no
-   longer simple packet-forwarding entities but have evolved into
-   compute-integrated network elements.  When network management
-   systems orchestrate dynamic traffic engineering, local fault
-   remediation, or real-time telemetry, they require on-demand
-   execution of management scripts at the closest data-plane edge.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
-<p id="section-1.2-2">However, managed networks enforce strict SLAs concerning jitter,
-   packet loss, and power budgets.  Traditional monolithic containers
-   fail to meet these operational constraints.  WASM sandboxing
-   bridges this gap by decoupling management logic from the underlying
-   hardware Board Support Package (BSP), transforming network-layer
-   compute into an ephemeral, managed pipeline.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
+<p id="section-1.1-1">As automated network management evolves, network operators increasingly rely on dynamic, closed-loop control mechanisms. Structured tool interfaces can expose network node capabilities for automated orchestration. Large language models can generate execution logic for management tasks. However, executing dynamic operational scripts or telemetry-collection logic directly on heterogeneous and constrained network devices poses security risks and resource challenges.
+Container-based execution may introduce startup and memory overhead that is unsuitable for some constrained nodes. WebAssembly <span>[<a href="#WASM" class="cite xref">WASM</a>]</span> provides an alternative for lightweight management tasks, subject to the capabilities and limits of the host runtime.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="use-cases">
-<section id="section-1.3">
+<section id="section-1.2">
         <h3 id="name-use-cases">
-<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-use-cases" class="section-name selfRef">Use Cases</a>
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-use-cases" class="section-name selfRef">Use Cases</a>
         </h3>
-<p id="section-1.3-1">Looking ahead, the integration of WebAssembly-based sandboxing,
-   Universal Bytecode Interfaces, and AI-driven orchestration is
-   expected to redefine the operational boundaries of autonomous
-   networks.  As 6G architectures, deterministic edge computing, and
-   large-scale high-density network deployments mature, network
-   management will shift from reactive scripting to proactive,
-   intent-driven closed-loop automation.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
-<p id="section-1.3-2">Specifically, future application scenarios will likely encompass:<a href="#section-1.3-2" class="pilcrow">¶</a></p>
-<p id="section-1.3-3">a) Autonomous Edge Healing: AI agents dynamically generating,
-      auditing, and pushing localized remediation bytecode to edge
-      nodes within milliseconds of network anomaly detection,
-      bypassing human intervention loops.
-   b) Cross-Vendor Network Function Virtualization: Universal execution
-      of proprietary traffic engineering and monitoring tasks across
-      heterogeneous equipment vendors without requiring specialized
-      board support packages (BSPs) or proprietary firmware.
-   c) Distributed Telemetry and Deterministic Control: Distributing
-      lightweight computation pipelines across resource-constrained
-      forwarding nodes and access gateways to optimize real-time
-      telemetry processing and closed-loop control at the data-plane
-      periphery.<a href="#section-1.3-3" class="pilcrow">¶</a></p>
+<p id="section-1.2-1">WebAssembly-based sandboxing, Universal Bytecode Interfaces, and automated orchestration support the following network management use cases:
+   a) Telemetry Collection: Distributing lightweight bytecode to edge nodes to collect and process local telemetry, returning the results needed for network management.
+   b) Policy Adjustment: Running short-lived tasks on edge nodes or compute boards for traffic inspection and service protection. Each sandbox executes a task with its own permissions and resource limits. Concurrent tasks support different user or service policies, subject to the node’s available capacity. Packet inspection uses authorized host capabilities.
+   c) Device Management: Executing device management operations through authorized host functions. Tasks can access and process local resources without uploading all raw data, supporting deployments with data-transfer or privacy constraints.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1366,14 +1292,12 @@ running inside a host process, executing WebAssembly bytecode with
 linear memory isolation.<a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.2">
-          <p id="section-2-2.2.1">UBI (Universal Bytecode Interface): A standardized abstraction layer
-of host functions injected into the WASM runtime, shielding
-management bytecode from hardware platform-specific details.<a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
+          <p id="section-2-2.2.1">UBI (Universal Bytecode Interface): An abstraction layer of host functions injected into the WASM runtime, shielding management bytecode from hardware platform-specific details.<a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.3">
           <p id="section-2-2.3.1">Node Profile: A structured metadata manifest that declares a network
 element's exposed capabilities, supported operations, and required
-host function privileges.<a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
+host function privileges. Capability advertisement does not itself authorize task execution.<a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.4">
           <p id="section-2-2.4.1">UBI-DP (Universal Bytecode Distribution Protocol): The encapsulation
@@ -1381,8 +1305,7 @@ and messaging mechanism used to dispatch compiled WASM bytecode
 binaries along with metadata across network management channels.<a href="#section-2-2.4.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-2.5">
-          <p id="section-2-2.5.1">WIT (Wasm Interface Type): A WebAssembly standard IDL format used to
-define types and functions crossing the sandbox boundary.<a href="#section-2-2.5.1" class="pilcrow">¶</a></p>
+          <p id="section-2-2.5.1">WIT (WebAssembly Interface Types): The interface definition language used by the WebAssembly Component Model to define types and functions crossing component boundaries.<a href="#section-2-2.5.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 </section>
@@ -1392,8 +1315,7 @@ define types and functions crossing the sandbox boundary.<a href="#section-2-2.5
       <h2 id="name-architectural-framework-ove">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-architectural-framework-ove" class="section-name selfRef">Architectural Framework Overview</a>
       </h2>
-<p id="section-3-1">The proposed framework consists of three operational planes
-   aligned with standard network management architectures:<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-1">The proposed framework consists of three logical planes. They separate task orchestration, policy coordination, and execution on edge devices:<a href="#section-3-1" class="pilcrow">¶</a></p>
 <span id="name-intent-based-framework"></span><div id="arch">
 <figure id="figure-1">
         <div class="alignCenter art-text artwork" id="section-3-2.1">
@@ -1403,17 +1325,17 @@ define types and functions crossing the sandbox boundary.<a href="#section-2-2.5
    | [Intent Parsing] -&gt; [Workflow Compile] -&gt; [Node Profile]
    +--------------------------------------------------------+
                                 |
-                                v (UBI-DP Dispatching)
+                                v (Task and constraints)
    +--------------------------------------------------------+
    |        Coordination &amp; Policy Plane (Control Layer)     |
-   | [Static Audit Matrix] -&gt; [CaaS Pool] -&gt; [SHA256 Sign]  |
+   | [Static Audit Matrix] -&gt; [CaaS Pool] -&gt; [Hash and Sign]|
    +--------------------------------------------------------+
                                 |
-                                v
-   +--------------------------------------------------------+
-   |        Embodied Execution Plane (Device Layer)         |
-   | [Warm Process Pool] -&gt; [WASM Sandbox] -&gt; [UBI Drivers] |
-   +--------------------------------------------------------+
+                                v(UBI-DP Dispatching)
+   +----------------------------------------------------------------------+
+   |             Embodied Execution Plane (Device Layer)                  |
+   | [WASM Sandbox] -&gt; [UBI Host Functions] -&gt; [Platform Implementations] |
+   +----------------------------------------------------------------------+
 </pre>
 </div>
 <figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
@@ -1422,20 +1344,14 @@ define types and functions crossing the sandbox boundary.<a href="#section-2-2.5
 </div>
 <ol start="1" type="1" class="normal type-1" id="section-3-3">
 <li id="section-3-3.1">
-          <p id="section-3-3.1.1">Intent &amp; Orchestration Plane: Translates network operator intents
-into structured workflow models and maps required management tools.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
+          <p id="section-3-3.1.1">Intent &amp; Orchestration Plane: Translates network operator intents into structured workflow models and maps required management tools. It identifies target nodes using Node Profiles and passes task constraints to the Coordination &amp; Policy Plane.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
 </li>
         <li id="section-3-3.2">
-          <p id="section-3-3.2.1">Coordination &amp; Policy Plane: Acts as the central management
-controller.  It audits requested tasks against security policies,
-performs deterministic compilation via Compilation-as-a-Service
-(CaaS), and issues cryptographically signed bytecode envelopes.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
+          <p id="section-3-3.2.1">Coordination &amp; Policy Plane: Acts as the central management controller. It audits requested tasks against security policies, compiles modules via Compilation-as-a-Service (CaaS), and issues cryptographically signed bytecode envelopes. The signed metadata binds the module digest to its approved host functions and resource limits.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
 </li>
         <li id="section-3-3.3">
-          <p id="section-3-3.3.1">Embodied Execution Plane: The physical edge node running embedded
-WASM runtimes. It manages a warm process pool to guarantee low
-sandbox setup latency (&lt;10ms) and restricts hardware access via
-UBI symbols.<a href="#section-3-3.3.1" class="pilcrow">¶</a></p>
+          <p id="section-3-3.3.1">Embodied Execution Plane: The physical edge node running embedded WASM runtimes. It validates the module and its associated policy, enforces resource limits, and restricts device access through authorized UBI host functions. A warm process pool retains initialized runtime processes to reduce sandbox setup time; task state and permissions are reset before reuse.
+  Host functions expose the sandbox host’s basic operations, such as reading a counter or updating a permitted policy. The UBI defines the interface visible to the module; platform-specific implementations access local APIs, drivers, or management services. Each invocation is checked against the task’s permissions.<a href="#section-3-3.3.1" class="pilcrow">¶</a></p>
 </li>
       </ol>
 </section>
@@ -1450,26 +1366,16 @@ UBI symbols.<a href="#section-3-3.3.1" class="pilcrow">¶</a></p>
         <h3 id="name-dynamic-resource-and-capabi">
 <a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-dynamic-resource-and-capabi" class="section-name selfRef">Dynamic Resource and Capability Discovery Mechanism</a>
         </h3>
-<p id="section-4.1-1">To establish reliable task routing, the management framework relies
-   on an automated Discovery Mechanism to map requirements to
-   heterogeneous resources:<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-1">The discovery mechanism maps task requirements to available node capabilities:<a href="#section-4.1-1" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-4.1-2">
 <li id="section-4.1-2.1">
-            <p id="section-4.1-2.1.1">Capability Advertisement: Upon network attachment or status update,
-the Edge Node broadcasts or registers its capability envelope
-(Node Profile).  For highly constrained nodes, this registration
-<span class="bcp14">SHOULD</span> use CoAP <span>[<a href="#RFC7252" class="cite xref">RFC7252</a>]</span>.  For standard elements, it <span class="bcp14">MAY</span> use gRPC
-or HTTP/3 <span>[<a href="#RFC9114" class="cite xref">RFC9114</a>]</span> over TLS.<a href="#section-4.1-2.1.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-2.1.1">Capability Advertisement: An edge node registers or updates its Node Profile using an existing management channel, such as CoAP <span>[<a href="#RFC7252" class="cite xref">RFC7252</a>]</span> or HTTP/3 <span>[<a href="#RFC9114" class="cite xref">RFC9114</a>]</span>.<a href="#section-4.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.1-2.2">
-            <p id="section-4.1-2.2.1">Semantic Feature Graph: The Central Management Controller parses
-incoming profiles into an active Resource Capability Graph cataloged
-by sensing domains and computational budgets.<a href="#section-4.1-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-2.2.1">Semantic Feature Graph: The controller maintains a capability catalog, optionally represented as a graph, including supported operations and resource budgets.<a href="#section-4.1-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.1-2.3">
-            <p id="section-4.1-2.3.1">Intent-Driven Matching Filter: When an operator emits a management
-workflow, the controller queries the feature graph to match valid
-target nodes supporting the required UBI primitives.<a href="#section-4.1-2.3.1" class="pilcrow">¶</a></p>
+            <p id="section-4.1-2.3.1">Intent-Driven Matching Filter: The controller selects nodes supporting the required UBI primitives and resource limits.<a href="#section-4.1-2.3.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 </section>
@@ -1814,8 +1720,12 @@ primitives to avoid directory traversal vectors.<a href="#section-6.2-2.2.1" cla
 <span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="seriesInfo">STD 97</span>, <span class="seriesInfo">RFC 9110</span>, <span class="seriesInfo">DOI 10.17487/RFC9110</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9110">https://www.rfc-editor.org/rfc/rfc9110</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9114">[RFC9114]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bishop, M., Ed.</span>, <span class="refTitle">"HTTP/3"</span>, <span class="seriesInfo">RFC 9114</span>, <span class="seriesInfo">DOI 10.17487/RFC9114</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9114">https://www.rfc-editor.org/rfc/rfc9114</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="WASM">[WASM]</dt>
+      <dd>
+<span class="refAuthor">WebAssembly Community Group</span>, <span class="refTitle">"WebAssembly Core Specification"</span>, <span>n.d.</span>, <span>&lt;<a href="https://webassembly.github.io/spec/core/">https://webassembly.github.io/spec/core/</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -1849,6 +1759,14 @@ primitives to avoid directory traversal vectors.<a href="#section-6.2-2.2.1" cla
 <div class="email">
 <span>Email:</span>
 <a href="mailto:ab@chinatelecom.cn" class="email">ab@chinatelecom.cn</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Yuanyuan Yang</span></div>
+<div dir="auto" class="left"><span class="org">Huawei</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:yangyuanyuan55@huawei.com" class="email">yangyuanyuan55@huawei.com</a>
 </div>
 </address>
 </section>
